@@ -76,7 +76,7 @@ router.post("/delete", async function (req, res) {
         "_id field must be filled"
       );
 
-    await Categories.remove({ _id: body._id });
+    await Categories.deleteOne({ _id: body._id });
     res.json(Response.successResponse({ success: true }));
   } catch (error) {
     let errorResponse = Response.errorResponse(error);
