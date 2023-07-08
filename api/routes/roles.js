@@ -6,6 +6,7 @@ const RolePrivileges = require("../db/models/RolePrivileges");
 const Response = require("../lib/Response");
 const CustomError = require("../lib/Error");
 const Enum = require("../config/Enum");
+const role_privileges = require("../config/role_privileges");
 
 router.get("/", async (req, res, next) => {
   try {
@@ -87,6 +88,10 @@ router.post("/delete", async (req, res, next) => {
     let errorResponse = Response.errorResponse(error);
     res.status(errorResponse.code).json(errorResponse);
   }
+});
+
+router.get("/role_privileges", async (req, res) => {
+  res.json(role_privileges);
 });
 
 module.exports = router;
