@@ -30,6 +30,17 @@ router.post("/add", async (req, res, next) => {
         "role_name must be filled."
       );
 
+    if (
+      !body.permissions ||
+      !Array.isArray(body.permissions) ||
+      body.permissions.length === 0
+    )
+      throw new CustomError(
+        Enum.HTTP_CODES.BAD_REQUEST,
+        "validation error",
+        "permission field must be an array."
+      );
+
     let role = new Roles({
       role_name: body.role_name,
       is_active: true,
@@ -37,6 +48,15 @@ router.post("/add", async (req, res, next) => {
     });
 
     await role.save();
+    for (let i = 0; i < body.permissions.length; i++) {
+      let priv = new RolePrivileges({
+        role_id: role._id,
+        permission: body.permissions[i],
+        created_by: req.user?.id,
+      });
+
+      await priv.save();
+    }
 
     res.json(Response.successResponse({ success: true }));
   } catch (error) {
@@ -60,6 +80,38 @@ router.post("/update", async (req, res, next) => {
 
     if (body.role_name) updates.role_name = body.role_name;
     if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
+
+    if (
+      body.permissions &&
+      Array.isArray(body.permissions) &&
+      body.permissions.length > 0
+    ) {
+      let permissions = await RolePrivileges.find({ role_id: body._id });
+
+      let removedPermissions = permissions.filter(
+        (x) => !body.permissions.includes(x.permission)
+      );
+
+      let newPermissions = body.permissions.filter(
+        (x) => !permissions.map((p) => p.permission).includes(x)
+      );
+
+      if (removedPermissions.length > 0) {
+        await RolePrivileges.remove({
+          _id: { $in: removedPermissions.map((x) => x._id) },
+        });
+      }
+
+      if (newPermissions.length > 0) {
+        for (let i = 0; i < newPermissions.length; i++) {
+          let priv = new RolePrivileges({
+            role_id: body._id,
+            permission: newPermissions[i],
+            created_by: req.user?.id,
+          });
+        }
+      }
+    }
 
     await Roles.updateOne({ _id: body._id }, updates);
 
