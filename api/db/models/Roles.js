@@ -20,7 +20,7 @@ const schema = mongoose.Schema(
 );
 
 class Roles extends mongoose.Model {
-  async remove(query) {
+  static async remove(query) {
     if (query._id) await RolePrivileges.remove({ role_id: query._id });
 
     await super.remove(query);
