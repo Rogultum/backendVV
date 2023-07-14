@@ -8,6 +8,8 @@ const Response = require("../lib/Response");
 const CustomError = require("../lib/Error");
 const Enum = require("../config/Enum");
 const Users = require("../db/models/Users");
+const UserRoles = require("../db/models/UserRoles");
+const Roles = require("../db/models/Roles");
 /* GET users listing. */
 router.get("/", async function (req, res) {
   try {
@@ -120,6 +122,76 @@ router.post("/delete", async function (req, res) {
     await Users.deleteOne({ _id: body._id });
 
     res.json(Response.successResponse({ success: true }));
+  } catch (error) {
+    let errorResponse = Response.errorResponse(error);
+    res.status(errorResponse.code).json(errorResponse);
+  }
+});
+
+router.post("/register", async function (req, res) {
+  try {
+    let body = req.body;
+
+    const user = await Users.findOne({});
+
+    if (user) {
+      return res.sendStatus(Enum.HTTP_CODES.NOT_FOUND);
+    }
+
+    if (!body.email)
+      throw new CustomError(
+        Enum.HTTP_CODES.BAD_REQUEST,
+        "Validation Error!",
+        "email field must be filled"
+      );
+
+    if (is.not.email(body.email))
+      throw new CustomError(
+        Enum.HTTP_CODES.BAD_REQUEST,
+        "Validation Error!",
+        "email field wrong"
+      );
+
+    if (!body.password)
+      throw new CustomError(
+        Enum.HTTP_CODES.BAD_REQUEST,
+        "Validation Error!",
+        "password field must be filled"
+      );
+
+    if (body.password.length < 8)
+      throw new CustomError(
+        Enum.HTTP_CODES.BAD_REQUEST,
+        "Validation E",
+        "Password must be > than 8"
+      );
+
+    let password = bcrypt.hashSync(body.password, bcrypt.genSaltSync(8), null);
+
+    let createdUser = await Users.create({
+      email: body.email,
+      password: password,
+      is_active: true,
+      first_name: body.first_name,
+      last_name: body.last_name,
+    });
+
+    let role = await Roles.create({
+      role_name: Enum.SUPER_ADMIN,
+      is_active: true,
+      created_by: createdUser._id,
+    });
+
+    await UserRoles.create({
+      role_id: role._id,
+      user_id: createdUser._id,
+    });
+
+    res
+      .status(Enum.HTTP_CODES.CREATED)
+      .json(
+        Response.successResponse({ success: true }, Enum.HTTP_CODES.CREATED)
+      );
   } catch (error) {
     let errorResponse = Response.errorResponse(error);
     res.status(errorResponse.code).json(errorResponse);

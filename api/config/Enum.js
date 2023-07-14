@@ -62,4 +62,6 @@ module.exports = {
     NOT_EXTENDED: 510,
     NETWORK_AUTHENTICATION_REQUIRED: 511,
   },
+
+  SUPER_ADMIN: "SUPER_ADMIN",
 };
