@@ -4,10 +4,10 @@ const router = express.Router();
 const moment = require("moment");
 const AuditLogs = require("../db/models/AuditLogs");
 
-router.post("/", async (req, res, next) => {
+router.post("/", async (req, res) => {
   try {
-    let body = req.body;
-    let query = {};
+    const body = req.body;
+    const query = {};
     let skip = body.skip;
     let limit = body.limit;
 
@@ -29,14 +29,14 @@ router.post("/", async (req, res, next) => {
       };
     }
 
-    let auditLogs = await AuditLogs.find(query)
+    const auditLogs = await AuditLogs.find(query)
       .sort({ created_at: -1 })
       .skip(skip)
       .limit(limit);
 
     res.json(Response.successResponse(auditLogs));
   } catch (error) {
-    let errorResponse = Response.errorResponse(error);
+    const errorResponse = Response.errorResponse(error);
     res.status(errorResponse.code).json(errorResponse);
   }
 });
